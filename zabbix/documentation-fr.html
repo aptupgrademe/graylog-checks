@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>check_graylog_zabbix.py – Documentation</title>
+<style>
+  :root {
+    --bg: #0f1117; --sidebar: #161b22; --card: #1c2128; --border: #30363d;
+    --accent: #58a6ff; --accent2: #3fb950; --warn: #d29922; --danger: #f85149;
+    --text: #e6edf3; --muted: #8b949e; --code-bg: #161b22;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text); display: flex; min-height: 100vh; font-size: 15px; line-height: 1.6;
+  }
+  nav { width: 260px; min-width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 24px 0; }
+  nav .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  nav .logo span { font-size: 11px; color: var(--muted); display: block; margin-top: 4px; }
+  nav .logo strong { font-size: 15px; color: var(--text); }
+  nav .langs { padding: 12px 20px; display: flex; gap: 8px; }
+  nav .langs a {
+    display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 600;
+    border: 1px solid var(--border); border-radius: 4px; color: var(--muted);
+  }
+  nav .langs a.active { color: var(--accent); border-color: var(--accent); }
+  nav a.navlink { display: block; padding: 6px 20px; color: var(--muted); text-decoration: none; font-size: 13px; border-left: 3px solid transparent; transition: color .15s, border-color .15s; }
+  nav a.navlink:hover, nav a.navlink.active { color: var(--accent); border-left-color: var(--accent); }
+  nav .section-label { padding: 16px 20px 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  main { flex: 1; padding: 40px 48px; max-width: 960px; }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  h2 { font-size: 20px; font-weight: 600; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }
+  h3 { font-size: 16px; font-weight: 600; margin: 28px 0 10px; color: var(--accent); }
+  p { margin-bottom: 12px; color: var(--text); }
+  ul, ol { padding-left: 22px; margin-bottom: 12px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+  code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 12.5px; background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; color: #e6edf3; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0 20px; font-size: 12.5px; line-height: 1.7; }
+  pre code { background: none; border: none; padding: 0; font-size: inherit; }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 16px 0; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; }
+  .card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .card .value { font-size: 14px; font-weight: 600; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-left: 6px; vertical-align: middle; }
+  .badge-green { background: #1a3a1a; color: var(--accent2); border: 1px solid #2ea04380; }
+  .badge-yellow { background: #2d1f00; color: var(--warn); border: 1px solid #d2992240; }
+  .callout { border-radius: 8px; padding: 14px 18px; margin: 16px 0; border-left: 4px solid; font-size: 14px; }
+  .callout-info { background: #0d2137; border-color: var(--accent); }
+  .callout-warn { background: #2d1f00; border-color: var(--warn); }
+  .callout-danger { background: #2d0f0f; border-color: var(--danger); }
+  .callout-success { background: #0d2416; border-color: var(--accent2); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13.5px; }
+  th { background: var(--card); color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #1c2128; }
+  .steps { counter-reset: step; list-style: none; padding: 0; }
+  .steps li { counter-increment: step; padding: 10px 0 10px 48px; position: relative; border-bottom: 1px solid var(--border); }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before { content: counter(step); position: absolute; left: 0; top: 10px; width: 28px; height: 28px; background: var(--card); border: 2px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--accent); line-height: 28px; text-align: center; }
+  section { scroll-margin-top: 24px; }
+  @media (max-width: 768px) { nav { display: none; } main { padding: 24px 20px; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <strong>graylog-checks / zabbix</strong>
+    <span>Documentation &amp; fonctionnement</span>
+  </div>
+  <div class="langs">
+    <a href="documentation.html">EN</a>
+    <a href="documentation-de.html">DE</a>
+    <a class="active" href="documentation-fr.html">FR</a>
+    <a href="documentation-es.html">ES</a>
+  </div>
+
+  <div class="section-label">Fondamentaux</div>
+  <a class="navlink" href="#overview">Objectif et décision</a>
+  <a class="navlink" href="#concepts">Que mesure-t-on ?</a>
+  <a class="navlink" href="#architecture">Fonctionnement : modèle d'item Zabbix</a>
+  <a class="navlink" href="#modes">Tous les modes en détail</a>
+
+  <div class="section-label">Exploitation</div>
+  <a class="navlink" href="#auth">Authentification</a>
+  <a class="navlink" href="#userparameter">Configuration UserParameter</a>
+  <a class="navlink" href="#install">Installation standard</a>
+
+  <div class="section-label">Référence</div>
+  <a class="navlink" href="#live-verification">Vérification en conditions réelles (2026-07-24)</a>
+  <a class="navlink" href="#open">Points ouverts</a>
+</nav>
+
+<main>
+
+<h1>check_graylog_zabbix.py – Documentation</h1>
+<p class="subtitle">Script de vérification Zabbix natif pour Graylog &middot; Projet frère de <a href="../icinga/documentation-fr.html">graylog-checks/icinga</a> &middot; État : juillet 2026</p>
+
+<div class="callout callout-info">
+  <strong>Plan de lecture</strong>
+  <a href="#overview">Objectif et décision</a> explique pourquoi cette
+  variante existe comme script autonome (et pas seulement une copie de la
+  version Icinga) ; <a href="../GRAYLOG-CONCEPTS.html">GRAYLOG-CONCEPTS.html</a>
+  (un niveau au-dessus) explique en détail la signification des différentes
+  valeurs Graylog, si Graylog est nouveau pour vous ;
+  <a href="#install">Installation standard</a> est le guide pas à pas
+  proprement dit pour votre environnement réel ;
+  <a href="#live-verification">Vérification en conditions réelles</a>
+  montre que cela a vraiment été testé, et pas seulement assemblé d'après
+  la documentation.
+</div>
+
+<section id="overview">
+<h2>Objectif et décision : pourquoi un script propre plutôt qu'une réutilisation ?</h2>
+<p>
+  Il y avait deux voies possibles pour Zabbix, et <strong>Raphael a
+  délibérément choisi la plus exigeante, la plus propre</strong> :
+</p>
+<table>
+  <tr><th>Approche</th><th>Fonctionnement</th><th>Évaluation</th></tr>
+  <tr>
+    <td><strong>1. Wrapper UserParameter</strong></td>
+    <td>Appeler le script Icinga2 existant (<code>check_graylog.py</code>) tel quel via un <code>UserParameter</code> Zabbix. La sortie texte complète (<code>"GRAYLOG WARNING - ..."</code>) se retrouve comme valeur chaîne dans un item Zabbix.</td>
+    <td><span class="badge badge-yellow">écarté</span> Rapide à mettre en œuvre, mais peu idiomatique pour Zabbix : les seuils sont dans le script plutôt que dans les triggers Zabbix, et le texte des perfdata devrait être péniblement réanalysé dans Zabbix pour en extraire des valeurs numériques pour les graphiques.</td>
+  </tr>
+  <tr>
+    <td><strong>2. Mode Zabbix natif (ce script)</strong></td>
+    <td>Script autonome, chaque appel renvoie exactement <strong>une valeur brute</strong> (nombre ou courte chaîne) sans aucune évaluation. Les seuils (WARNING/CRITICAL) sont définis comme des <strong>expressions de trigger Zabbix</strong>, pas dans le script.</td>
+    <td><span class="badge badge-green">implémenté</span> Correspond au modèle propre à Zabbix d'item/trigger, les valeurs sont directement utilisables pour les graphiques, les seuils peuvent être ajustés dans Zabbix lui-même sans modifier le script.</td>
+  </tr>
+</table>
+<p>
+  La logique sous-jacente d'accès à l'API Graylog (authentification, points
+  de terminaison, noms de champs JSON) est identique dans les deux scripts
+  et a déjà été vérifiée contre une véritable instance Graylog pour la
+  variante Icinga2 — seule la <strong>forme de la sortie</strong> diffère.
+</p>
+</section>
+
+<section id="concepts">
+<h2>Que mesure-t-on exactement ?</h2>
+<p>
+  Une explication détaillée, écrite pour les débutants en Graylog, de
+  toutes les valeurs mesurées (journal, santé du cluster, inputs, débit,
+  nœuds, métriques internes) — avec des analogies et l'importance
+  opérationnelle de chaque valeur — se trouve de façon centralisée (valable
+  pour les deux variantes) à :
+</p>
+<p><a href="../GRAYLOG-CONCEPTS.html"><strong>&rarr; GRAYLOG-CONCEPTS.html</strong></a></p>
+<div class="callout callout-success">
+  <strong>Résumé pour les pressés</strong>
+  Le <strong>journal</strong> (<code>graylog.journal.*</code>) est la
+  valeur la plus importante — c'est la mémoire tampon où les messages
+  attendent lorsque l'indexeur ne suit pas le rythme. S'il se remplit, des
+  messages sont perdus. Tout le reste (santé du cluster, inputs, débit,
+  nœuds) couvre d'autres types de pannes indépendantes, que le journal seul
+  ne montre pas.
+</div>
+</section>
+
+<section id="architecture">
+<h2>Fonctionnement : modèle d'item Zabbix (par rapport à Icinga2)</h2>
+<p>
+  Les plugins Icinga2/Nagios s'évaluent <strong>eux-mêmes</strong> (code de
+  sortie 0-3 + sortie texte). Zabbix sépare cela strictement en deux
+  étapes :
+</p>
+<table>
+  <tr><th>Étape</th><th>Qui le fait</th><th>Ici</th></tr>
+  <tr><td><strong>1. Récupérer la valeur</strong></td><td>Un <code>UserParameter</code> dans l'agent Zabbix appelle une commande dont toute la <strong>sortie standard</strong> est reprise comme valeur d'item</td><td><code>check_graylog_zabbix.py --mode journal-utilization</code> ne renvoie par ex. que <code>0.0</code></td></tr>
+  <tr><td><strong>2. Évaluer la valeur</strong></td><td>Un <strong>trigger</strong> dans le serveur Zabbix, défini comme une expression portant sur la dernière valeur connue (ou historique) de l'item</td><td><code>last(/Host/graylog.journal.utilization)&gt;80</code></td></tr>
+</table>
+<p>
+  La différence décisive : chez Zabbix, les seuils (80&nbsp;%, 95&nbsp;%,
+  ...) <strong>ne se trouvent pas dans le script</strong>, mais sont gérés
+  directement dans Zabbix sous forme de triggers — modifiables à tout
+  moment, sans toucher au UserParameter ni au script.
+</p>
+</section>
+
+<section id="modes">
+<h2>Tous les modes en détail</h2>
+<p>
+  15 modes via <code>--mode</code>, chacun affiche <strong>exactement une
+  valeur</strong> sur stdout, code de sortie 0 en cas de succès, 1 pour
+  toute erreur (injoignable, authentification échouée, champ manquant) :
+</p>
+<table>
+  <tr><th>Mode</th><th>Valeur de retour</th><th>Signification</th></tr>
+  <tr><td><code>lbstatus</code></td><td>Chaîne : <code>ALIVE</code>/<code>THROTTLED</code>/<code>DEAD</code></td><td>État de santé propre à Graylog</td></tr>
+  <tr><td><code>cluster-status</code></td><td>Chaîne : <code>green</code>/<code>yellow</code>/<code>red</code></td><td>Santé du cluster d'indexation</td></tr>
+  <tr><td><code>cluster-shards-unassigned</code></td><td>Entier</td><td>Nombre de shards non assignés</td></tr>
+  <tr><td><code>journal-utilization</code></td><td>Nombre à virgule flottante, 0-100</td><td>Taux d'utilisation du journal en %</td></tr>
+  <tr><td><code>journal-uncommitted</code></td><td>Entier</td><td>Messages en attente dans le journal</td></tr>
+  <tr><td><code>journal-read-rate</code> / <code>journal-write-rate</code></td><td>Nombre</td><td>Messages/s lus ou écrits</td></tr>
+  <tr><td><code>inputs-total</code> / <code>inputs-running</code> / <code>inputs-failed</code></td><td>Entier</td><td>Nombre d'inputs configurés/actifs/en échec</td></tr>
+  <tr><td><code>throughput</code></td><td>Entier</td><td>Messages/s à l'échelle du cluster</td></tr>
+  <tr><td><code>nodes-total</code> / <code>nodes-unhealthy</code></td><td>Entier</td><td>Nombre total de nœuds Graylog / nœuds en mauvaise santé</td></tr>
+  <tr><td><code>metric</code></td><td>quelconque (passthrough)</td><td>Accès générique à n'importe quelle métrique Dropwizard interne, nécessite <code>--metric-name</code> + <code>--field</code></td></tr>
+  <tr><td><code>list-metrics-lld</code></td><td>JSON LLD Zabbix</td><td>Pas une valeur mesurée, mais un format de découverte pour le Low-Level Discovery (voir ci-dessous)</td></tr>
+</table>
+
+<h3>Particularité : <code>list-metrics-lld</code> — Low-Level Discovery Zabbix</h3>
+<p>
+  Au lieu de se contenter, comme pour Icinga2, d'afficher une simple liste
+  texte pour une recherche manuelle, ce mode fournit le format
+  <strong>JSON LLD natif de Zabbix</strong> :
+</p>
+<pre><code>{"data": [{"{#METRICNAME}": "org.graylog2.journal.append.1-sec-rate"}, ...]}</code></pre>
+<p>
+  Cela peut être intégré directement comme règle de découverte dans
+  Zabbix, afin de générer automatiquement des prototypes d'item pour
+  toutes les métriques trouvées — une fonctionnalité Zabbix qui n'a pas
+  d'équivalent direct chez Icinga2.
+</p>
+
+<h3>lbstatus : le même correctif que pour Icinga2</h3>
+<p>
+  <code>/system/lbstatus</code> répond avec <code>Content-Type:
+  text/plain</code> et le statut dans le <strong>code de statut
+  HTTP</strong> lui-même (200/429/503), pas dans le corps. Le script
+  interroge ici spécifiquement avec <code>Accept: */*</code> (et non
+  <code>application/json</code> comme pour les autres modes) — sinon
+  Graylog renvoie <code>406 Not Acceptable</code>. Cette erreur a été
+  trouvée lors du test en conditions réelles de la variante Icinga2, et
+  est ici correctement implémentée dès le départ.
+</p>
+</section>
+
+<section id="auth">
+<h2>Authentification</h2>
+<p>
+  Identique à la variante Icinga2 : token API Graylog via authentification
+  HTTP Basic, le token comme nom d'utilisateur, la chaîne littérale
+  <code>"token"</code> comme mot de passe.
+</p>
+<div class="callout callout-danger">
+  <strong>Le rôle Reader ne suffit PAS pour <code>metric</code>/<code>list-metrics-lld</code></strong>
+  Confirmé en conditions réelles (voir <a href="#live-verification">Vérification en conditions réelles</a>) :
+  avec le seul rôle <strong>Reader</strong>, les points de terminaison
+  <code>/system/metrics/*</code> renvoient <code>403 Not authorized</code>.
+  Les 12 autres modes fonctionnent sans problème avec Reader. Pour les deux
+  modes de métriques, ajouter en plus quatre permissions sur l'utilisateur :
+  <pre style="margin-top:8px"><code>curl -u admin:&lt;adminpw&gt; -H "X-Requested-By: cli" -H "Content-Type: application/json" \
+  -X PUT "http://&lt;graylog&gt;:9000/api/users/&lt;user-id&gt;" \
+  -d '{"permissions": ["metrics:read","metrics:allkeys","metrics:readall","metrics:readhistory"]}'</code></pre>
+</div>
+</section>
+
+<section id="userparameter">
+<h2>Configuration UserParameter</h2>
+<p>
+  Fichier <code>userparameter_graylog.conf</code> dans ce dossier, à
+  déposer sur l'agent <strong>Zabbix</strong> (pas sur le serveur) :
+</p>
+<pre><code>UserParameter=graylog.lbstatus,python3 /pfad/check_graylog_zabbix.py --url http://&lt;graylog&gt;:9000/api --token &lt;token&gt; --mode lbstatus
+UserParameter=graylog.journal.utilization,python3 /pfad/check_graylog_zabbix.py --url http://&lt;graylog&gt;:9000/api --token &lt;token&gt; --mode journal-utilization
+...
+UserParameter=graylog.metric[*],python3 /pfad/check_graylog_zabbix.py --url http://&lt;graylog&gt;:9000/api --token &lt;token&gt; --mode metric --metric-name $1 --field $2</code></pre>
+<div class="callout callout-info">
+  <strong>Items paramétrés avec <code>[*]</code></strong>
+  La dernière ligne montre le mécanisme de Zabbix pour les items
+  paramétrés : la clé d'item Zabbix
+  <code>graylog.metric[jvm.memory.heap.usage,value]</code> transmet
+  <code>jvm.memory.heap.usage</code> comme <code>$1</code> et
+  <code>value</code> comme <code>$2</code> à la commande UserParameter.
+  Testé en conditions réelles, fonctionne comme prévu (voir
+  <a href="#live-verification">ci-dessous</a>).
+</div>
+<p>
+  Après chaque modification de ce fichier, l'agent Zabbix doit être
+  rechargé (<code>systemctl restart zabbix-agent2</code> ou
+  <code>zabbix-agentd</code> selon la version).
+</p>
+</section>
+
+<section id="install">
+<h2>Installation standard (environnement Zabbix réel)</h2>
+<p>
+  En partant d'une installation standard de serveur et d'agent Zabbix déjà
+  en fonctionnement (installation par paquet, pas la configuration de test
+  Docker).
+</p>
+<ol class="steps">
+  <li>
+    <strong>Créer un utilisateur Reader dans Graylog et générer un token API</strong> —
+    procédure identique à la variante Icinga2, voir
+    <a href="../icinga/INSTALL.md">../icinga/INSTALL.md</a>, étapes 1-3
+    (seule l'étape 2, les permissions de métriques, est également
+    nécessaire ici si <code>metric</code>/<code>list-metrics-lld</code>
+    doivent être utilisés).
+  </li>
+  <li>
+    <strong>Copier le script sur l'hôte de l'agent Zabbix</strong> (pas sur le
+    serveur — c'est l'agent qui exécute les commandes UserParameter, pas le
+    serveur) :
+    <pre style="margin-top:8px"><code>cp scripts/check_graylog_zabbix.py /usr/lib/zabbix/externalscripts/
+chmod +x /usr/lib/zabbix/externalscripts/check_graylog_zabbix.py</code></pre>
+    Python 3 et <code>python3-requests</code> doivent être installés sur cet hôte.
+  </li>
+  <li>
+    <strong>Déployer le fichier UserParameter</strong>, en adaptant l'URL/le token à chaque ligne :
+    <pre style="margin-top:8px"><code>cp userparameter_graylog.conf /etc/zabbix/zabbix_agent2.d/
+systemctl restart zabbix-agent2</code></pre>
+  </li>
+  <li>
+    <strong>Avant la configuration dans Zabbix, tester</strong> que l'agent fournit lui-même les valeurs correctement :
+    <pre style="margin-top:8px"><code>zabbix_agent2 -t graylog.journal.utilization
+# Erwartete Ausgabe: graylog.journal.utilization  [s|&lt;Zahl&gt;]
+# "s" = success. Bei "e" (error) stimmt Pfad/Token/Netzwerk nicht.</code></pre>
+  </li>
+  <li>
+    <strong>Créer l'hôte dans Zabbix</strong> (interface web : <em>Data collection &rarr; Hosts &rarr; Create host</em>),
+    faire pointer l'interface agent vers l'IP de l'hôte agent.
+  </li>
+  <li>
+    <strong>Créer les items</strong> pour chaque valeur souhaitée — type "Zabbix agent",
+    clé exactement comme dans le fichier UserParameter (par ex. <code>graylog.journal.utilization</code>),
+    choisir le type de valeur approprié (numeric float pour les
+    pourcentages, numeric unsigned pour les compteurs, character pour les
+    chaînes de statut comme <code>cluster-status</code>).
+  </li>
+  <li>
+    <strong>Créer les triggers</strong> pour les seuils, par ex. :
+    <pre style="margin-top:8px"><code>last(/&lt;host&gt;/graylog.journal.utilization)&gt;80   -&gt; Warning
+last(/&lt;host&gt;/graylog.journal.utilization)&gt;95   -&gt; High
+last(/&lt;host&gt;/graylog.cluster.status)&lt;&gt;"green"  -&gt; Warning</code></pre>
+  </li>
+  <li>
+    Après un intervalle de poll (<code>delay</code> de l'item, par ex. 30s),
+    vérifier les valeurs d'item et l'état des triggers dans l'interface
+    Zabbix sous <em>Monitoring &rarr; Latest data</em> ou
+    <em>Monitoring &rarr; Problems</em>.
+  </li>
+</ol>
+<div class="callout callout-warn">
+  <strong>À adapter avant la mise en production</strong>
+  <ul style="margin-top:6px">
+    <li>Les seuils de trigger proposés ici (80&nbsp;%/95&nbsp;%) ont été établis contre une instance de test vide, non validés contre votre volume de messages réel.</li>
+    <li><code>nodes-unhealthy</code> seul ne détecte pas de façon fiable une panne complète d'un nœud (un nœud manquant disparaît simplement de la liste des nœuds) — vérifier en plus <code>nodes-total</code> par rapport au nombre de nœuds connu via un trigger (<code>last(...)&lt;&lt;nombre attendu&gt;</code>).</li>
+    <li>TLS / certificats auto-signés : ajouter <code>--insecure</code> comme argument supplémentaire dans la ligne UserParameter si nécessaire.</li>
+  </ul>
+</div>
+</section>
+
+<section id="live-verification">
+<h2>Vérification en conditions réelles (2026-07-24)</h2>
+<p>
+  Comme pour la variante Icinga2, non seulement construit d'après la
+  documentation, mais testé contre un véritable environnement Zabbix mis
+  en place via Docker Compose (Zabbix Server + Zabbix Web + PostgreSQL +
+  Zabbix Agent2, images officielles Zabbix, tag <code>:latest</code>
+  résolu au moment du test en <strong>Zabbix 7.4.12</strong>) sur la même
+  VM de test que Graylog.
+</p>
+<div class="callout callout-danger">
+  <strong>Correction : ici aussi, test initial effectué par erreur contre Graylog 6.1</strong>
+  Même discordance de version que pour la variante Icinga2 (voir sa
+  <a href="../icinga/documentation-fr.html#live-verification">Vérification en conditions réelles</a>) :
+  le premier test de ce script (test agent, création d'items/triggers) a
+  tourné contre <code>graylog/graylog:6.1</code>, pas contre la version
+  correspondant à la spécification OpenAPI. Après la question de Raphael,
+  la pile de test Graylog a été basculée vers
+  <code>graylog/graylog:7.1.3</code> (+ <code>mongo:7.0</code>, exigé
+  impérativement par 7.1.3) et
+  <strong>le test Zabbix complet a été répété</strong> — test agent,
+  nouveau token API, valeurs d'item, évaluation des triggers. Résultat :
+  identique, aucun des 15 modes ne s'est comporté différemment entre 6.1
+  et 7.1.3.
+</div>
+
+<h3>Étapes de test et résultats</h3>
+<ol class="steps">
+  <li>
+    Les 15 modes exécutés individuellement contre la véritable API Graylog
+    (pas via Zabbix, directement via <code>python3
+    check_graylog_zabbix.py</code>) — tous ont renvoyé des valeurs brutes
+    correctes et plausibles, par ex. <code>journal-utilization:
+    0.0</code>, <code>cluster-status: yellow</code>, <code>nodes-total:
+    1</code>.
+  </li>
+  <li>
+    Conteneur agent Zabbix mis en place, fichier UserParameter intégré,
+    Python3 + <code>requests</code> installés après coup dans le conteneur
+    (l'image officielle de l'agent Zabbix ne les inclut pas — exactement
+    comme précédemment pour le conteneur Icinga2).
+  </li>
+  <li>
+    <strong>Test côté agent</strong> (<code>zabbix_agent2 -t &lt;key&gt;</code>) confirmant le succès pour toutes les clés testées :
+    <pre style="margin-top:8px"><code>graylog.journal.utilization                   [s|0.0]
+graylog.lbstatus                              [s|ALIVE]
+graylog.cluster.status                        [s|yellow]
+graylog.throughput                            [s|0]
+graylog.nodes.total                           [s|1]
+graylog.metric[jvm.memory.heap.usage,value]   [s|0.1861647253430262]</code></pre>
+    La dernière entrée confirme également que la syntaxe paramétrée <code>[*]</code> fonctionne comme documenté.
+  </li>
+  <li>
+    <strong>Cycle serveur complet confirmé via l'API Zabbix :</strong> un
+    hôte, deux items (<code>graylog.journal.utilization</code>,
+    <code>graylog.cluster.status</code>) et un trigger
+    (<code>last(...cluster.status)&lt;&gt;"green"</code>) créés en direct
+    via l'API JSON-RPC de Zabbix. Interrogés depuis le serveur lui-même
+    après un cycle de poll (pas depuis le test agent, mais les valeurs
+    réellement stockées par le serveur) :
+    <pre style="margin-top:8px"><code>Item "Graylog Journal Utilization": lastvalue = "0"
+Item "Graylog Cluster Status":      lastvalue = "yellow"
+Trigger "Graylog indexer cluster not green on {HOST.NAME}": value = "1"  (PROBLEM)</code></pre>
+    <p style="margin-top:8px;color:var(--muted);font-size:13px;">(Ce passage encore contre Graylog 6.1, avant la correction de version.)</p>
+  </li>
+  <li>
+    <strong>Nouveau test contre Graylog 7.1.3 :</strong> nouvel utilisateur
+    Reader + token générés sur l'instance 7.1.3 fraîchement installée,
+    fichier UserParameter et les deux items/le trigger créés basculés sur
+    le nouveau token. Test agent à nouveau réussi
+    (<code>graylog.cluster.status [s|green]</code> immédiatement après le
+    basculement, puis de nouveau <code>yellow</code> plus tard dans le
+    test &ndash; fluctuation normale pour un OpenSearch à nœud unique
+    fraîchement installé, pas une erreur). Le trigger est resté
+    correctement en "PROBLEM" dans les deux états, dès que la valeur
+    n'était pas exactement <code>"green"</code> &ndash; confirme que la
+    réactivité en conditions réelles de l'ensemble du cycle fonctionne
+    également sans changement en 7.1.3.
+  </li>
+</ol>
+<div class="callout callout-success">
+  <strong>Concrètement, cela signifie</strong>
+  Le trigger est effectivement <strong>déclenché</strong> (état
+  "PROBLEM"), car <code>cluster-status</code> = <code>"yellow"</code> et
+  non <code>"green"</code> — exactement le comportement attendu. Cela
+  confirme le cycle complet : le serveur Zabbix interroge l'agent &rarr;
+  l'agent exécute la commande UserParameter &rarr; le script interroge la
+  véritable API Graylog &rarr; la valeur brute remonte vers le serveur
+  &rarr; elle est stockée comme item &rarr; l'expression du trigger est
+  évaluée correctement. Pas seulement « censé fonctionner d'après la doc »,
+  mais réellement mis à l'épreuve.
+</div>
+
+<h3>Différence avec la vérification Icinga2 : aucun nouveau test des permissions API</h3>
+<p>
+  La lacune de permissions des métriques (le rôle Reader ne suffit pas
+  pour <code>/system/metrics/*</code>) avait déjà été trouvée et corrigée
+  lors de la variante Icinga2 contre la même instance Graylog (l'utilisateur
+  de test avec les permissions ajoutées est le même) — ici, seul le mode
+  <code>metric</code> lui-même a été retesté, sans réexaminer la question
+  des permissions depuis le début.
+</p>
+</section>
+
+<section id="open">
+<h2>Points ouverts</h2>
+<ul>
+  <li>Seules 2 des 15 clés d'item ont été associées à un véritable trigger dans Zabbix (<code>journal.utilization</code>, <code>cluster.status</code>) — les autres n'ont été testées qu'au niveau de l'agent (<code>zabbix_agent2 -t</code>), sans triggers propres câblés dans Zabbix</li>
+  <li><code>list-metrics-lld</code> n'a été testé que comme sortie brute, sans être réellement intégré comme règle de découverte dans Zabbix (aucun prototype d'item généré automatiquement n'a été vérifié)</li>
+  <li>Testé contre une instance Graylog vide et fraîche, sans charge de messages réelle — les seuils de trigger ne sont pas validés pour une exploitation en production</li>
+  <li>Scénario multi-nœuds (<code>nodes-total</code> &gt; 1) non testé, l'environnement de test ne comportant qu'un seul nœud Graylog</li>
+</ul>
+</section>
+
+</main>
+</body>
+</html>
+</content>

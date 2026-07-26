@@ -1,0 +1,49 @@
+// Icinga2 CheckCommand for plugins/check_graylog.py.
+// Copy to /etc/icinga2/conf.d/commands.conf (or wherever local CheckCommands
+// live) on the Icinga2 host, and drop check_graylog.py somewhere on
+// PluginDir (commonly /usr/lib/nagios/plugins/) -- `pip install requests`
+// (or `apt install python3-requests`) first, it's the only dependency.
+
+object CheckCommand "graylog" {
+  command = [ PluginDir + "/check_graylog.py" ]
+
+  arguments = {
+    "--url" = "$graylog_url$"
+    "--token" = {
+      value = "$graylog_token$"
+      description = "Graylog API token (Basic Auth username; password is the literal string 'token')"
+    }
+    "--mode" = "$graylog_mode$"
+    "--warning" = {
+      value = "$graylog_warning$"
+      set_if = {{ macro("$graylog_warning$") != false }}
+    }
+    "--critical" = {
+      value = "$graylog_critical$"
+      set_if = {{ macro("$graylog_critical$") != false }}
+    }
+    "--timeout" = "$graylog_timeout$"
+    "--insecure" = {
+      set_if = "$graylog_insecure$"
+    }
+    "--expected-nodes" = {
+      value = "$graylog_expected_nodes$"
+      set_if = {{ macro("$graylog_expected_nodes$") != false }}
+    }
+    "--metric-name" = {
+      value = "$graylog_metric_name$"
+      set_if = {{ macro("$graylog_metric_name$") != false }}
+    }
+    "--field" = {
+      value = "$graylog_field$"
+      set_if = {{ macro("$graylog_field$") != false }}
+    }
+    "--filter" = {
+      value = "$graylog_filter$"
+      set_if = {{ macro("$graylog_filter$") != false }}
+    }
+  }
+
+  vars.graylog_timeout = 10
+  vars.graylog_insecure = false
+}

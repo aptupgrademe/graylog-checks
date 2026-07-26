@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graylog-Konzepte für Monitoring-Einsteiger</title>
+<style>
+  :root {
+    --bg: #0f1117; --sidebar: #161b22; --card: #1c2128; --border: #30363d;
+    --accent: #58a6ff; --accent2: #3fb950; --warn: #d29922; --danger: #f85149;
+    --text: #e6edf3; --muted: #8b949e; --code-bg: #161b22;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.65;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  h2 { font-size: 21px; font-weight: 600; margin: 44px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 16px; font-weight: 600; margin: 24px 0 10px; color: var(--accent); }
+  p { margin-bottom: 12px; }
+  ul, ol { padding-left: 22px; margin-bottom: 12px; }
+  li { margin-bottom: 6px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+  code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 12.5px; background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 5px;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 20px; overflow-x: auto; margin: 12px 0 20px; font-size: 12.5px; line-height: 1.7;
+  }
+  pre code { background: none; border: none; padding: 0; }
+  .callout { border-radius: 8px; padding: 14px 18px; margin: 16px 0; border-left: 4px solid; font-size: 14px; }
+  .callout-info { background: #0d2137; border-color: var(--accent); }
+  .callout-warn { background: #2d1f00; border-color: var(--warn); }
+  .callout-danger { background: #2d0f0f; border-color: var(--danger); }
+  .callout-success { background: #0d2416; border-color: var(--accent2); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .analogy {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 18px; margin: 14px 0; font-size: 14px;
+  }
+  .analogy strong { color: var(--accent2); }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13.5px; }
+  th { background: var(--card); color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Was diese Checks eigentlich messen — und warum das wichtig ist</h1>
+<p class="subtitle">Für alle, die Graylog nicht im Detail kennen: was ein Log-Management-System aus Monitoring-Sicht überhaupt ausmacht, und warum genau diese sechs Dinge überwacht werden.</p>
+
+<section id="what-is-graylog">
+<h2>Was macht Graylog eigentlich?</h2>
+<p>
+  Graylog ist ein <strong>zentrales Log-Management-System</strong>: Server, Anwendungen,
+  Netzwerkgeräte usw. schicken ihre Log-Meldungen dorthin, statt dass jeder
+  Admin auf jedem einzelnen Server einzeln in Log-Dateien wühlen muss.
+  Graylog sammelt, speichert, durchsucht und stellt diese Meldungen zentral
+  dar — für Fehlersuche, Sicherheitsauswertung, Compliance, oder einfach
+  "was ist um 3 Uhr nachts eigentlich passiert".
+</p>
+<div class="analogy">
+  <strong>Analogie:</strong> Graylog ist wie ein Postverteilzentrum. Jeden Tag
+  kommen tausende Briefe (Log-Nachrichten) von überall her an. Das Zentrum
+  muss sie schnell sortieren, ablegen und durchsuchbar machen — und genau an
+  <em>diesem Verteilprozess</em> setzen die Checks an: läuft die Sortierung
+  noch rund, oder stapeln sich die Briefe bereits ungeöffnet in der Ecke?
+</div>
+<p>Technisch besteht eine Graylog-Installation aus drei Teilen, die zusammenspielen:</p>
+<table>
+  <tr><th>Komponente</th><th>Aufgabe</th></tr>
+  <tr><td><strong>Graylog selbst</strong></td><td>Nimmt Nachrichten entgegen, verarbeitet sie (Regeln, Filter, Umwandlungen), stellt die Web-Oberfläche und die REST-API bereit</td></tr>
+  <tr><td><strong>Indexer (OpenSearch/Elasticsearch)</strong></td><td>Die eigentliche Such-/Speicher-Engine, in der die Nachrichten landen und durchsuchbar werden</td></tr>
+  <tr><td><strong>MongoDB</strong></td><td>Speichert Graylogs eigene Konfiguration (Benutzer, Dashboards, Regeln) — nicht die Log-Nachrichten selbst</td></tr>
+</table>
+<p>
+  Für Monitoring ist wichtig: <strong>alle drei können auf unterschiedliche
+  Art kaputtgehen</strong>, und "Graylog läuft" (der Prozess existiert)
+  sagt darüber praktisch nichts aus.
+</p>
+</section>
+
+<section id="journal">
+<h2>1. Das Journal — der wichtigste Wert überhaupt</h2>
+<p>
+  Das ist der Kernpunkt, den man als Graylog-Neuling am ehesten unterschätzt.
+</p>
+<div class="analogy">
+  <strong>Analogie:</strong> Stell dir das Journal als einen <strong>Eingangskorb</strong>
+  auf dem Schreibtisch der Poststelle vor. Neue Briefe (Nachrichten) landen
+  zuerst dort, bevor sie ins Archiv (den Indexer) einsortiert werden. Solange
+  das Einsortieren mit dem Tempo der ankommenden Post mithält, ist der Korb
+  fast leer. Kommt das Einsortieren aber nicht hinterher — weil das Archiv
+  überlastet ist, der Rechner zu langsam, die Festplatte voll — stapelt sich
+  der Korb immer höher.
+</div>
+<p>
+  Der entscheidende Punkt: Graylog wirft eingehende Nachrichten <strong>nicht
+  sofort weg</strong>, wenn der Indexer überlastet ist. Sie werden im Journal
+  (einer Datei auf der lokalen Festplatte) zwischengespeichert und warten.
+  Das ist gut, weil kurzfristige Lastspitzen keinen Datenverlust bedeuten —
+  aber das Journal hat eine <strong>begrenzte Größe</strong>. Ist sie voll,
+  fallen doch Nachrichten weg, und zwar gerade die neuesten, wichtigsten.
+</p>
+<div class="callout callout-success">
+  <strong>Warum das der wichtigste Frühwarn-Indikator ist</strong>
+  Ein volles Journal ist fast immer das <strong>erste</strong> sichtbare
+  Symptom eines größeren Problems (Indexer überlastet, Festplatte am
+  Limit, Netzwerkproblem zum Indexer) — Tage bevor irgendetwas anderes
+  in Graylog rot wird. Wer nur auf "läuft der Prozess" oder "ist die
+  Web-Oberfläche erreichbar" achtet, sieht dieses Problem oft erst, wenn
+  bereits Daten verloren gehen.
+</div>
+<p><strong>Was genau gemessen wird:</strong></p>
+<ul>
+  <li><strong>Auslastung in %</strong> — wie voll ist der Eingangskorb im Verhältnis zu seiner maximalen Kapazität. Über 80&nbsp;% ist ein ernstzunehmendes Warnsignal, über 95&nbsp;% praktisch akut.</li>
+  <li><strong>Uncommitted Entries</strong> — die genaue Anzahl der Nachrichten, die noch auf ihre Verarbeitung warten (die "Anzahl Briefe im Korb")</li>
+  <li><strong>Lese-/Schreibrate</strong> — wie schnell kommen neue Nachrichten rein (Schreibrate) vs. wie schnell werden sie abgearbeitet (Leserate). Ist die Schreibrate dauerhaft höher als die Leserate, wächst der Korb garantiert weiter, auch wenn er aktuell noch nicht voll ist.</li>
+</ul>
+</section>
+
+<section id="cluster-health">
+<h2>2. Indexer-Cluster-Gesundheit — funktioniert das Archiv selbst?</h2>
+<div class="analogy">
+  <strong>Analogie:</strong> Das ist der Gesundheitszustand des Archivs
+  selbst, nicht des Eingangskorbs davor. Ein Archiv mit <strong>Grün</strong>
+  hat alles doppelt abgelegt (Redundanz) und funktioniert einwandfrei. Bei
+  <strong>Gelb</strong> fehlt die Zweitkopie mancher Unterlagen (kein Grund
+  zur Panik, aber ein Ausfall wäre jetzt riskanter). Bei <strong>Rot</strong>
+  fehlen tatsächlich Originale — echter, teilweiser Datenverlust.
+</div>
+<p>
+  Technisch: der Indexer (OpenSearch/Elasticsearch) verteilt die Daten in
+  "Shards" (Datenfragmente), oft mit Kopien (Replica-Shards) für
+  Ausfallsicherheit. Läuft nur ein einzelner Indexer-Knoten (wie in einer
+  kleinen Testumgebung), gibt es niemanden, der eine Kopie halten könnte —
+  dann ist "Gelb" völlig normal und dauerhaft zu erwarten, kein Fehler.
+  In einer Umgebung mit mehreren Indexer-Knoten wäre "Gelb" dagegen ein
+  echtes Warnsignal (ein Knoten fehlt gerade).
+</p>
+<p>
+  Wichtig: Graylog selbst kann weiterlaufen und sogar die Web-Oberfläche
+  anzeigen, während der Indexer bereits "Rot" ist — Suche und
+  Nachrichtenspeicherung sind dann trotzdem gestört. Dieser Check prüft
+  also etwas, das die reine "Graylog erreichbar"-Prüfung nicht abdeckt.
+</p>
+</section>
+
+<section id="inputs">
+<h2>3. Inputs — kommt überhaupt noch Post an?</h2>
+<div class="analogy">
+  <strong>Analogie:</strong> Ein Input ist ein einzelner <strong>Briefkasten</strong>
+  (z. B. "Syslog von den Firewall-Geräten", "GELF von den Docker-Containern").
+  Eine Poststelle kann mehrere Briefkästen gleichzeitig betreiben. Fällt
+  einer aus — jemand hat versehentlich das Schloss zugeklebt — kommen
+  von genau dieser Quelle einfach keine Briefe mehr an. Der Rest der
+  Poststelle merkt davon nichts, sie funktioniert ja weiter.
+</div>
+<p>
+  Das ist der Grund, warum ein einzelner ausgefallener Input ohne gezielte
+  Prüfung leicht unbemerkt bleibt: Graylog selbst läuft, der Indexer ist
+  grün, das Journal ist leer (kommt ja nichts mehr an!) — alles sieht
+  "gesund" aus, obwohl seit Stunden eine ganze Quelle komplett fehlt. Wer
+  sich auf diese eine Quelle verlässt (z. B. Firewall-Logs für
+  Sicherheitsauswertung), merkt das ohne Input-Check oft erst, wenn er
+  aktiv danach sucht.
+</p>
+</section>
+
+<section id="throughput">
+<h2>4. Throughput — der Pulsmesser</h2>
+<p>
+  Die einfachste Kennzahl: wie viele Nachrichten kommen gerade pro Sekunde
+  an, über alle Inputs und Knoten zusammen. Primär interessant als
+  <strong>Trendlinie</strong> (in Grafana/Dashboards), nicht als einzelner
+  Schwellenwert — ein plötzlicher Abfall auf 0 bei einer Umgebung, die
+  normalerweise konstant Daten sendet, ist aber ein sehr direktes
+  "irgendwas ist komplett stehen geblieben"-Signal.
+</p>
+</section>
+
+<section id="nodes">
+<h2>5. Cluster-Knoten — sind wirklich alle Poststellen-Standorte erreichbar?</h2>
+<p>
+  Größere Graylog-Installationen laufen nicht auf einem, sondern mehreren
+  Servern (Knoten) gleichzeitig, für Ausfallsicherheit und Kapazität. Die
+  anderen Checks (Journal, Cluster-Status, Inputs) beantwortet jeweils nur
+  <strong>der eine Knoten</strong>, den die Anfrage zufällig erreicht — ein
+  zweiter Knoten kann dabei bereits komplett ausgefallen sein, ohne dass
+  das aus den anderen Checks ersichtlich wird. Dieser Check fragt gezielt
+  "wie viele Knoten antworten überhaupt, und sind die, die antworten,
+  wirklich gesund" — der einzige der sechs Checks mit echtem
+  Cluster-weitem statt Einzelknoten-Blick.
+</p>
+</section>
+
+<section id="metrics">
+<h2>6. Interne Metriken (JVM, Puffer, ...) — der Blick unter die Motorhaube</h2>
+<p>
+  Graylog läuft auf der Java Virtual Machine (JVM) und führt intern
+  hunderte Detail-Kennzahlen — Speicherverbrauch, Garbage-Collection-Pausen,
+  interne Verarbeitungspuffer. Für den Alltag meist nicht nötig, aber
+  wertvoll für zwei Szenarien:
+</p>
+<ul>
+  <li><strong>Kapazitätsplanung</strong> — steigt der Speicherverbrauch stetig über Wochen, wird irgendwann ein größerer Server nötig</li>
+  <li><strong>Tiefergehende Fehlersuche</strong> — wenn die "großen" Checks bereits ein Problem zeigen (z. B. Journal wächst), aber die Ursache unklar ist, können diese Detail-Metriken (z. B. Puffer-Auslastung) den genauen Engpass zeigen</li>
+</ul>
+</section>
+
+<section id="why-both">
+<h2>Warum eigentlich beide Monitoring-Systeme?</h2>
+<p>
+  Dieselben sechs Grundwerte werden hier für zwei unterschiedliche
+  Monitoring-Systeme (Icinga2 und Zabbix) bereitgestellt — nicht weil die
+  Werte sich unterscheiden, sondern weil die beiden Systeme fundamental
+  unterschiedlich arbeiten. Details und konkrete Beispiele dazu in den
+  jeweiligen Unterordnern:
+</p>
+<ul>
+  <li><a href="icinga/documentation-de.html">Icinga2-Variante</a> — ein Skript pro Aufruf liefert direkt OK/WARNING/CRITICAL</li>
+  <li><a href="zabbix/documentation-de.html">Zabbix-Variante</a> — ein Skript pro Aufruf liefert einen rohen Messwert, Schwellenwerte definiert Zabbix selbst über Trigger</li>
+</ul>
+</section>
+
+</main>
+</body>
+</html>

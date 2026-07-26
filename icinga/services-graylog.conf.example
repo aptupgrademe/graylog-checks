@@ -1,0 +1,80 @@
+// Example Service apply rules using the "graylog" CheckCommand.
+// Copy to /etc/icinga2/conf.d/, adjust host.name / graylog_url / token, and
+// (recommended) move graylog_token into a vaulted/encrypted var rather than
+// committing it in plaintext -- same rule as terraform.tfvars, backend.hcl
+// etc. elsewhere in this repo.
+
+apply Service "graylog-lbstatus" {
+  import "generic-service"
+  check_command = "graylog"
+  vars.graylog_mode = "lbstatus"
+  assign where host.vars.graylog_url
+}
+
+apply Service "graylog-cluster-health" {
+  import "generic-service"
+  check_command = "graylog"
+  vars.graylog_mode = "cluster"
+  assign where host.vars.graylog_url
+}
+
+apply Service "graylog-journal" {
+  import "generic-service"
+  check_command = "graylog"
+  vars.graylog_mode = "journal"
+  vars.graylog_warning = 80
+  vars.graylog_critical = 95
+  assign where host.vars.graylog_url
+}
+
+apply Service "graylog-inputs" {
+  import "generic-service"
+  check_command = "graylog"
+  vars.graylog_mode = "inputs"
+  assign where host.vars.graylog_url
+}
+
+apply Service "graylog-throughput" {
+  import "generic-service"
+  check_command = "graylog"
+  vars.graylog_mode = "throughput"
+  // No thresholds by default -- throughput=0 is normal on a quiet homelab.
+  // Set vars.graylog_warning / graylog_critical as a floor if/when you have
+  // a baseline msg/s worth alerting under.
+  assign where host.vars.graylog_url
+}
+
+apply Service "graylog-nodes" {
+  import "generic-service"
+  check_command = "graylog"
+  vars.graylog_mode = "nodes"
+  // Set to your real node count once known -- catches a node dropping out
+  // of the cluster entirely, which the other checks above can't see (they
+  // only ever talk to whichever single node answers the request).
+  // vars.graylog_expected_nodes = 3
+  assign where host.vars.graylog_url
+}
+
+// Example generic metric check -- confirm the exact metric name and its
+// JSON field first with:
+//   ./check_graylog.py --url ... --token ... --mode list-metrics --filter heap
+// then adjust graylog_metric_name/graylog_field below to match.
+apply Service "graylog-jvm-heap" {
+  import "generic-service"
+  check_command = "graylog"
+  vars.graylog_mode = "metric"
+  vars.graylog_metric_name = "jvm.memory.heap.usage"
+  vars.graylog_field = "value"
+  vars.graylog_warning = 0.8
+  vars.graylog_critical = 0.95
+  assign where host.vars.graylog_url
+}
+
+// On the Host object for the Graylog VM:
+//
+// object Host "HP?-graylog01" {
+//   import "generic-host"
+//   address = "192.168.10.xx"
+//   vars.graylog_url = "https://192.168.10.xx:9000/api"
+//   vars.graylog_token = "<api-token>"
+// }

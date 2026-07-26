@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>check_graylog.py – Dokumentation</title>
+<style>
+  :root {
+    --bg:       #0f1117;
+    --sidebar:  #161b22;
+    --card:     #1c2128;
+    --border:   #30363d;
+    --accent:   #58a6ff;
+    --accent2:  #3fb950;
+    --warn:     #d29922;
+    --danger:   #f85149;
+    --text:     #e6edf3;
+    --muted:    #8b949e;
+    --code-bg:  #161b22;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  nav {
+    width: 260px;
+    min-width: 260px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 24px 0;
+  }
+  nav .logo {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  nav .logo span { font-size: 11px; color: var(--muted); display: block; margin-top: 4px; }
+  nav .logo strong { font-size: 15px; color: var(--text); }
+  nav .langs { padding: 12px 20px; display: flex; gap: 8px; }
+  nav .langs a {
+    display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 600;
+    border: 1px solid var(--border); border-radius: 4px; color: var(--muted);
+  }
+  nav .langs a.active { color: var(--accent); border-color: var(--accent); }
+  nav a.navlink {
+    display: block;
+    padding: 6px 20px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    border-left: 3px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  nav a.navlink:hover, nav a.navlink.active { color: var(--accent); border-left-color: var(--accent); }
+  nav .section-label {
+    padding: 16px 20px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+  }
+
+  main {
+    flex: 1;
+    padding: 40px 48px;
+    max-width: 960px;
+  }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  h2 {
+    font-size: 20px; font-weight: 600;
+    margin: 48px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  h3 { font-size: 16px; font-weight: 600; margin: 28px 0 10px; color: var(--accent); }
+  p  { margin-bottom: 12px; color: var(--text); }
+  ul, ol { padding-left: 22px; margin-bottom: 12px; }
+  li { margin-bottom: 4px; }
+  a  { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+
+  code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 12.5px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: #e6edf3;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    font-size: 12.5px;
+    line-height: 1.7;
+  }
+  pre code { background: none; border: none; padding: 0; font-size: inherit; }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+  }
+  .card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .card .value { font-size: 14px; font-weight: 600; }
+  .card .value code { background: none; border: none; font-size: 13px; padding: 0; color: var(--accent); }
+
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .badge-green  { background: #1a3a1a; color: var(--accent2); border: 1px solid #2ea04380; }
+  .badge-yellow { background: #2d1f00; color: var(--warn);    border: 1px solid #d2992240; }
+
+  .callout {
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    border-left: 4px solid;
+    font-size: 14px;
+  }
+  .callout-info    { background: #0d2137; border-color: var(--accent); }
+  .callout-warn    { background: #2d1f00; border-color: var(--warn); }
+  .callout-danger  { background: #2d0f0f; border-color: var(--danger); }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 13.5px;
+  }
+  th {
+    background: var(--card);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #1c2128; }
+
+  section { scroll-margin-top: 24px; }
+
+  @media (max-width: 768px) {
+    nav { display: none; }
+    main { padding: 24px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <strong>graylog-checks / icinga</strong>
+    <span>Dokumentation &amp; Funktionsweise</span>
+  </div>
+  <div class="langs">
+    <a href="documentation.html">EN</a>
+    <a class="active" href="documentation-de.html">DE</a>
+    <a href="documentation-fr.html">FR</a>
+    <a href="documentation-es.html">ES</a>
+  </div>
+
+  <div class="section-label">Grundlagen</div>
+  <a class="navlink" href="#overview">Ziel</a>
+  <a class="navlink" href="#plugin-api">Funktionsweise: Plugin-Konventionen</a>
+  <a class="navlink" href="#modes">Die acht Modi</a>
+
+  <div class="section-label">Betrieb</div>
+  <a class="navlink" href="#auth">Authentifizierung</a>
+  <a class="navlink" href="#icinga-config">Konfiguration in Icinga2</a>
+
+  <div class="section-label">Referenz</div>
+  <a class="navlink" href="#sources">Verwendete Quellen</a>
+  <a class="navlink" href="#openapi-check">OpenAPI-Abgleich (2026-07-23)</a>
+  <a class="navlink" href="#vorlage-check">ChatGPT-Vorlage: Bewertung (2026-07-23)</a>
+  <a class="navlink" href="#live-verification">Live-Verifikation (2026-07-24)</a>
+  <a class="navlink" href="#handover-setup">Einrichtung für den Produktiveinsatz</a>
+  <a class="navlink" href="#open">Offene Punkte</a>
+</nav>
+
+<main>
+
+<h1>check_graylog.py – Dokumentation</h1>
+<p class="subtitle">Icinga2-Check-Plugin für Graylog &middot; Schwester-Projekt zu <a href="../zabbix/documentation-de.html">graylog-checks/zabbix</a> &middot; Stand: Juli 2026</p>
+<div class="callout callout-info">
+  <strong>Lesefahrplan</strong>
+  <a href="../GRAYLOG-CONCEPTS.html">GRAYLOG-CONCEPTS.html</a> (eine Ebene höher) erklärt ausführlich, was die einzelnen Graylog-Werte inhaltlich bedeuten, falls Graylog neu für dich ist; <a href="#modes">Die acht Modi</a> erklärt, was das Plugin konkret prüft und warum; <a href="#live-verification">Live-Verifikation</a> zeigt die tatsächlichen Testergebnisse gegen eine echte Graylog-Instanz inkl. zweier dabei gefundener und behobener Bugs; <a href="#handover-setup">Einrichtung für den Produktiveinsatz</a> ist die eigentliche Schritt-für-Schritt-Anleitung für eure echte Umgebung. Der Rest der Seite ist Entstehungs-/Entscheidungsgeschichte, für den Betrieb nicht zwingend nötig.
+</div>
+
+<section id="overview">
+<h2>Ziel</h2>
+<p>
+  Icinga2 soll die wichtigsten Graylog-Zustände regelmäßig über dessen REST
+  API abfragen, nicht nur "läuft der Prozess" prüfen. Ein Graylog-Server
+  kann technisch laufen und trotzdem in einem Zustand sein, der bald zu
+  Datenverlust führt (z. B. ein voller Message-Journal) – genau solche
+  Zustände sollen früh sichtbar werden.
+</p>
+<div class="card-grid">
+  <div class="card">
+    <div class="label">Sprache</div>
+    <div class="value">Python 3</div>
+  </div>
+  <div class="card">
+    <div class="label">Abhängigkeit</div>
+    <div class="value"><code>requests</code></div>
+  </div>
+  <div class="card">
+    <div class="label">Modi</div>
+    <div class="value">8 (<code>--mode</code>)</div>
+  </div>
+  <div class="card">
+    <div class="label">Getestet gegen Live-Instanz</div>
+    <div class="value">Ja <span class="badge badge-green">24.07.2026</span></div>
+  </div>
+</div>
+</section>
+
+<section id="plugin-api">
+<h2>Funktionsweise: Nagios/Icinga2-Plugin-Konventionen</h2>
+<p>
+  Icinga2 versteht kein eigenes Plugin-Format – es ruft ein beliebiges
+  Kommandozeilenprogramm auf und interpretiert <strong>Exit-Code</strong>
+  und <strong>Standardausgabe</strong> nach einem seit Nagios etablierten
+  Standard (dem "Monitoring Plugins API").
+</p>
+<table>
+  <tr><th>Exit-Code</th><th>Bedeutung</th></tr>
+  <tr><td><code>0</code></td><td>OK</td></tr>
+  <tr><td><code>1</code></td><td>WARNING</td></tr>
+  <tr><td><code>2</code></td><td>CRITICAL</td></tr>
+  <tr><td><code>3</code></td><td>UNKNOWN (z. B. Verbindungsfehler, unerwartete API-Antwort)</td></tr>
+</table>
+<p>
+  Die erste Ausgabezeile ist die für Icinga sichtbare Statusmeldung.
+  Optional folgt nach einem <code>|</code> (Pipe) <strong>Performance-Data</strong>
+  im Format <code>label=wert;warn;crit;min;max</code> – das sind die Werte,
+  die Icinga/Grafana später für Graphen nutzen, ohne die Textmeldung parsen
+  zu müssen. <code>check_graylog.py</code> folgt exakt diesem Schema:
+</p>
+<pre><code>GRAYLOG WARNING - journal utilization is 82.3% (14200 uncommitted entries) | utilization=82.3%;80.0;95.0;0;100 uncommitted_entries=14200;;;0 read_msgs_per_sec=310;;;0 write_msgs_per_sec=340;;;0</code></pre>
+<p>
+  Icinga liest daraus: Status = WARNING, Textmeldung, und vier Messwerte für
+  die Graphen.
+</p>
+<div class="callout callout-info">
+  <strong>Ein Skript, acht Modi statt acht Einzelskripte</strong>
+  Auth-Handling, HTTP-Fehlerbehandlung und Perfdata-Formatierung bleiben so
+  an einer Stelle, statt achtmal dupliziert zu werden.
+</div>
+</section>
+
+<section id="modes">
+<h2>Die acht Modi im Detail</h2>
+
+<h3>1. lbstatus</h3>
+<table>
+  <tr><td style="width:140px"><strong>Endpoint</strong></td><td><code>GET /api/system/lbstatus</code></td></tr>
+  <tr><td><strong>Zweck</strong></td><td>Graylogs eigener, aggregierter Gesundheitsstatus, gedacht für Load-Balancer-Healthchecks. Günstigste, schnellste Prüfung.</td></tr>
+  <tr><td><strong>Antwort</strong></td><td>Klartext <code>ALIVE</code>, <code>THROTTLED</code> oder <code>DEAD</code></td></tr>
+  <tr><td><strong>Mapping</strong></td><td><code>ALIVE</code>→OK, <code>THROTTLED</code>→WARNING (Graylog drosselt bewusst die Annahme neuer Nachrichten, meist weil Indexer/Journal unter Druck stehen), <code>DEAD</code>→CRITICAL</td></tr>
+</table>
+
+<h3>2. cluster</h3>
+<table>
+  <tr><td style="width:140px"><strong>Endpoint</strong></td><td><code>GET /api/system/indexer/cluster/health</code></td></tr>
+  <tr><td><strong>Zweck</strong></td><td>Zustand des dahinterliegenden Elasticsearch-/OpenSearch-Clusters, auf dem Graylog seine Indizes ablegt. Graylog selbst kann laufen, während Suche/Indizierung bereits gestört ist.</td></tr>
+  <tr><td><strong>Antwort</strong></td><td>JSON mit <code>status</code> (<code>green</code>/<code>yellow</code>/<code>red</code>) und einem <code>shards</code>-Objekt</td></tr>
+  <tr><td><strong>Mapping</strong></td><td><code>green</code>→OK, <code>yellow</code>→WARNING (meist fehlende Replikat-Shards – in einem Single-Node-Homelab-Setup dauerhaft normal), <code>red</code>→CRITICAL (Primär-Shards fehlen, echter Datenverlust-Zustand)</td></tr>
+</table>
+
+<h3>3. journal</h3>
+<table>
+  <tr><td style="width:140px"><strong>Endpoint</strong></td><td><code>GET /api/system/journal</code></td></tr>
+  <tr><td><strong>Zweck</strong></td><td>Der eigentliche Frühwarn-Indikator. Graylog schreibt eingehende Nachrichten zunächst in einen lokalen Journal (Kafka-artiges Append-only-Log) und erst von dort in den Indexer. Kommt der Indexer nicht hinterher, wächst der Journal, statt dass Nachrichten sofort verloren gehen – aber nur bis zur konfigurierten Journal-Größe.</td></tr>
+  <tr><td><strong>Antwort</strong></td><td>JSON mit u. a. <code>utilization_ratio</code> (0.0–1.0), <code>uncommitted_journal_entries</code>, <code>append_events_per_second</code>, <code>read_events_per_second</code>, <code>enabled</code></td></tr>
+  <tr><td><strong>Schwellenwerte</strong></td><td>Default WARNING ab 80&nbsp;%, CRITICAL ab 95&nbsp;% Auslastung (<code>--warning</code>/<code>--critical</code> überschreibbar). Journal laut API deaktiviert → OK mit Hinweistext.</td></tr>
+</table>
+<div class="callout callout-success" style="background:#0d2416;border-color:var(--accent2);">
+  <strong>Warum das der wichtigste Check ist</strong>
+  <code>cluster</code> und <code>lbstatus</code> können beide noch grün
+  sein, während der Journal bereits deutlich voller wird – das ist das
+  erste messbare Symptom, bevor überhaupt etwas rot wird.
+</div>
+
+<h3>4. inputs</h3>
+<table>
+  <tr><td style="width:140px"><strong>Endpoint</strong></td><td><code>GET /api/system/inputstates</code></td></tr>
+  <tr><td><strong>Zweck</strong></td><td>Prüft jeden konfigurierten Input (z. B. Syslog-UDP-Listener, GELF-Input) einzeln auf seinen Laufzustand – ein einzelner abgestürzter Input wird von <code>cluster</code>/<code>lbstatus</code> nicht erkannt.</td></tr>
+  <tr><td><strong>Antwort</strong></td><td>JSON-Liste mit <code>state</code> pro Input (<code>RUNNING</code>, <code>FAILED</code>, <code>STOPPED</code>, ...) und Titel</td></tr>
+  <tr><td><strong>Mapping</strong></td><td>Alles <code>RUNNING</code>→OK. Irgendein Input nicht <code>RUNNING</code>→CRITICAL, mit Auflistung. Keine Inputs konfiguriert→WARNING.</td></tr>
+</table>
+
+<h3>5. throughput</h3>
+<table>
+  <tr><td style="width:140px"><strong>Endpoint</strong></td><td><code>GET /api/system/throughput</code></td></tr>
+  <tr><td><strong>Zweck</strong></td><td>Cluster-weite Nachrichten/Sekunde – primär für Trend/Graphen, sekundär als Ausfall-Indikator ("Ingestion komplett zum Stillstand gekommen").</td></tr>
+  <tr><td><strong>Schwellenwerte</strong></td><td>Standardmäßig keine – 0 Nachrichten/s ist in einem ruhigen Homelab normal. Werden <code>--warning</code>/<code>--critical</code> gesetzt, wirken sie als <strong>Untergrenze</strong> (Wert darunter ist das Problem).</td></tr>
+</table>
+
+<h3>6. nodes <span class="badge badge-green">neu, 2026-07-23</span></h3>
+<table>
+  <tr><td style="width:140px"><strong>Endpoint</strong></td><td><code>GET /api/cluster</code></td></tr>
+  <tr><td><strong>Zweck</strong></td><td>Beantwortet "sind wirklich alle Graylog-Knoten erreichbar" – die fünf Modi oben werden alle von genau dem einen Knoten beantwortet, den die Anfrage zufällig trifft, nicht vom gesamten Cluster. Ein zweiter Knoten kann dabei längst weg sein, ohne dass <code>lbstatus</code>/<code>cluster</code>/<code>journal</code> das bemerken.</td></tr>
+  <tr><td><strong>Antwort</strong></td><td>JSON-Dictionary <code>node_id → SystemOverviewResponse</code> (u. a. <code>hostname</code>, <code>lb_status</code>, <code>is_processing</code>, <code>lifecycle</code>) – ein Eintrag pro Knoten, der geantwortet hat</td></tr>
+  <tr><td><strong>Mapping</strong></td><td>Jeder Knoten mit <code>lb_status != "ALIVE"</code> oder <code>is_processing = false</code> → CRITICAL. Optional <code>--expected-nodes N</code>: weniger Knoten als erwartet in der Antwort → CRITICAL (der Fall, wenn ein Knoten komplett ausfällt und daher gar nicht erst im Dictionary auftaucht).</td></tr>
+</table>
+
+<h3>7. metric <span class="badge badge-green">neu, 2026-07-23</span></h3>
+<table>
+  <tr><td style="width:140px"><strong>Endpoint</strong></td><td><code>GET /api/system/metrics/{metricName}</code></td></tr>
+  <tr><td><strong>Zweck</strong></td><td>Generischer Zugriff auf eine einzelne von Graylogs internen Dropwizard-Metriken – JVM-Heap, Garbage Collection, CPU, Ring-Buffer-Auslastung (Input/Process/Output), Pipeline-Performance, Thread-Pools. Ein Modus statt sieben, weil Graylog keinen Wildcard-Endpoint für Metrik-Familien anbietet (siehe <a href="#vorlage-check">ChatGPT-Vorlage: Bewertung</a>).</td></tr>
+  <tr><td><strong>Parameter</strong></td><td><code>--metric-name</code> (Pflicht, exakter Name, z. B. <code>jvm.memory.heap.usage</code>), <code>--field</code> (Punkt-Pfad in das JSON hinein, Default <code>value</code>), <code>--warning</code>/<code>--critical</code></td></tr>
+  <tr><td><strong>Mapping</strong></td><td>Wert ≥ <code>--critical</code> → CRITICAL, ≥ <code>--warning</code> → WARNING, sonst OK. Fehlt <code>--field</code> in der Antwort → UNKNOWN.</td></tr>
+</table>
+<div class="callout callout-warn">
+  <strong>Einzige Stelle im Skript ohne Spezifikations-Garantie</strong>
+  Das <code>MetricsSummaryResponse</code>/<code>com.codahale.metrics.Metric</code>-Schema
+  ist in der OpenAPI-Spezifikation <strong>leer</strong>
+  (<code>{}</code>) – Dropwizard-Metriken serialisieren je nach Typ
+  unterschiedlich (Gauge: <code>value</code>, Counter: <code>count</code>,
+  Meter/Timer: verschachtelte <code>rate</code>/<code>time</code>-Objekte),
+  und das ist selbst in der Spezifikation nicht dokumentiert. Der
+  <code>--field</code>-Pfad ist deshalb ein Best-Effort-Parameter, keine
+  bestätigte Struktur – vor dem Produktiveinsatz mit <code>list-metrics</code>
+  (unten) und einem manuellen <code>curl</code> gegen die echte Instanz
+  verifizieren.
+</div>
+
+<h3>8. list-metrics <span class="badge badge-green">neu, 2026-07-23</span></h3>
+<table>
+  <tr><td style="width:140px"><strong>Endpoint</strong></td><td><code>GET /api/system/metrics/names</code></td></tr>
+  <tr><td><strong>Zweck</strong></td><td>Kein echter Check, sondern ein Entdeckungs-Werkzeug: listet alle auf der Instanz verfügbaren Metrik-Namen (optional gefiltert mit <code>--filter</code>), damit man den exakten Namen für <code>--mode metric --metric-name ...</code> findet, statt ihn zu erraten.</td></tr>
+  <tr><td><strong>Mapping</strong></td><td>Immer OK – reine Auflistung, keine Bewertung.</td></tr>
+</table>
+</section>
+
+<section id="auth">
+<h2>Authentifizierung</h2>
+<p>
+  Graylogs REST API akzeptiert API-Tokens als <strong>HTTP Basic Auth</strong>,
+  wobei das Token selbst der Benutzername ist und als Passwort der feste,
+  wörtliche String <code>"token"</code> übergeben wird (kein Platzhalter –
+  das ist tatsächlich so von Graylog spezifiziert). Zusätzlich setzt das
+  Skript bei jedem Request den Header <code>X-Requested-By</code> mit
+  (CSRF-Schutz, den Graylogs API bei manchen Operationen verlangt).
+</p>
+<div class="callout callout-warn">
+  <strong>Least Privilege</strong>
+  Token an einen eigenen Graylog-Benutzer mit <strong>Reader</strong>-Rolle
+  binden, nicht an einen Admin-Account – das Token liegt auf dem
+  Icinga2-Host.
+</div>
+<div class="callout callout-danger">
+  <strong>Live bestätigt: Reader-Rolle reicht NICHT für <code>metric</code>/<code>list-metrics</code></strong>
+  Beim Live-Test (siehe <a href="#live-verification">Live-Verifikation</a>) hat sich gezeigt: mit reiner
+  <strong>Reader</strong>-Rolle liefern <code>/system/metrics/*</code>-Endpunkte
+  <code>403 Not authorized</code> – <code>lbstatus</code>, <code>cluster</code>,
+  <code>journal</code>, <code>inputs</code>, <code>throughput</code> und
+  <code>nodes</code> funktionieren mit Reader problemlos, aber die beiden
+  Metrik-Modi brauchen zusätzlich vier explizite Permissions am Benutzer:
+  <code>metrics:read</code>, <code>metrics:allkeys</code>,
+  <code>metrics:readall</code>, <code>metrics:readhistory</code>. Diese lassen
+  sich per API direkt auf den Benutzer setzen (zusätzlich zur Reader-Rolle,
+  nicht als Ersatz):
+  <pre style="margin-top:8px"><code>curl -u admin:&lt;adminpw&gt; -H "X-Requested-By: cli" -H "Content-Type: application/json" \
+  -X PUT "http://&lt;graylog&gt;:9000/api/users/&lt;user-id&gt;" \
+  -d '{"permissions": ["metrics:read","metrics:allkeys","metrics:readall","metrics:readhistory"]}'</code></pre>
+  Die <code>&lt;user-id&gt;</code> ist Graylogs interne MongoDB-ObjectId, nicht
+  der Benutzername – abrufbar über <code>GET /api/users/&lt;username&gt;</code>
+  (Feld <code>id</code>). Wer nur die sechs Basis-Checks braucht (kein
+  <code>metric</code>/<code>list-metrics</code>), kann diesen Schritt
+  überspringen.
+</div>
+</section>
+
+<section id="icinga-config">
+<h2>Konfiguration in Icinga2</h2>
+<p>Zwei Dateien decken das ab:</p>
+<ul>
+  <li><code>commands.conf.example</code> – definiert das <code>CheckCommand</code>-Objekt, das die Icinga2-DSL-Variablen (<code>$graylog_url$</code>, <code>$graylog_token$</code>, ...) auf die CLI-Argumente von <code>check_graylog.py</code> abbildet</li>
+  <li><code>services-graylog.conf.example</code> – fünf <code>apply Service</code>-Regeln (eine pro Modus), die auf jeden <code>Host</code> mit gesetztem <code>vars.graylog_url</code> greifen</li>
+</ul>
+<p>
+  Praktisch: <code>check_graylog.py</code> landet auf dem Icinga2-Host unter
+  <code>PluginDir</code> (typisch <code>/usr/lib/nagios/plugins/</code>),
+  beide <code>.conf.example</code>-Dateien werden kopiert (Endung
+  <code>.example</code> entfernen) und die Platzhalter-Werte
+  (<code>graylog_url</code>, <code>graylog_token</code>, Ziel-IP) angepasst.
+</p>
+</section>
+
+<section id="sources">
+<h2>Verwendete Quellen</h2>
+<div class="callout callout-danger">
+  <strong>Wichtig für die Einordnung</strong>
+  In dieser Session wurde <strong>keine Websuche und kein Live-Abruf</strong>
+  der offiziellen Graylog-Dokumentation durchgeführt.
+</div>
+<p>Das Skript basiert auf trainiertem Wissen über:</p>
+<ul>
+  <li>Graylogs REST-API-Struktur (offizielle Doku unter <code>docs.graylog.org</code>, insbesondere die Endpunkte unter <code>/api/system/*</code>) – aus Trainingsdaten, nicht live nachgeschlagen</li>
+  <li>Die "Nagios Plugin Development Guidelines" (Monitoring Plugins Project, <code>monitoring-plugins.org</code>) für Exit-Codes und Performance-Data-Format – ebenfalls aus Trainingsdaten</li>
+  <li>Allgemeines Wissen über Icinga2s DSL (<code>CheckCommand</code>, <code>apply Service</code>)</li>
+</ul>
+<p>
+  <strong>Das heißt konkret:</strong> Die verwendeten Endpunkt-Pfade und
+  JSON-Feldnamen (<code>utilization_ratio</code>,
+  <code>uncommitted_journal_entries</code>, <code>shards</code>, ...)
+  entsprechen dem Stand, der mir aus Training bekannt ist – sie können sich
+  zwischen Graylog-Versionen leicht unterscheiden (Graylog ändert
+  REST-API-Details gelegentlich zwischen Major-Versionen).
+</p>
+<div class="callout callout-warn">
+  <strong>Vor Produktiveinsatz verifizieren</strong>
+  Jeden Modus einmal von Hand gegen die tatsächlich laufende Graylog-Version
+  testen, z. B.:
+  <pre style="margin-top:8px"><code>curl -u &lt;token&gt;:token https://&lt;graylog&gt;:9000/api/system/journal</code></pre>
+  und die JSON-Struktur mit dem im Skript erwarteten Format vergleichen.
+</div>
+<p>
+  <strong>Update:</strong> Dieser Abgleich wurde inzwischen für die
+  API-Struktur nachgeholt – nicht per Websuche, sondern weil Raphael mir
+  einen echten OpenAPI-Export seiner Graylog-Instanz zur Verfügung gestellt
+  hat. Ergebnisse und zwei dabei gefundene Fehler:
+  <a href="#openapi-check">OpenAPI-Abgleich (2026-07-23)</a>.
+</p>
+</section>
+
+<section id="openapi-check">
+<h2>OpenAPI-Abgleich (2026-07-23)</h2>
+<p>
+  Raphael hat mir einen Export der Graylog-REST-API-Spezifikation zur
+  Verfügung gestellt: <code>openapi.json</code> (~1,1&nbsp;MB, OpenAPI
+  3.1.0, 515 Endpunkte, Graylog-Version <code>7.1.3+c34604d</code>), abgelegt
+  direkt in diesem Ordner. Damit ließ sich die in
+  <a href="#sources">Verwendete Quellen</a> angemahnte Verifikation
+  tatsächlich durchführen – nicht mehr nur als offener Punkt, sondern als
+  echter Abgleich von Annahme gegen Spezifikation.
+</p>
+<p>Alle fünf vom Plugin genutzten Endpunkte existieren exakt unter den erwarteten Pfaden. Ergebnis pro Modus:</p>
+<table>
+  <tr><th>Modus</th><th>Endpoint</th><th>Ergebnis</th></tr>
+  <tr>
+    <td><code>lbstatus</code></td>
+    <td><code>/system/lbstatus</code></td>
+    <td><span class="badge" style="background:#2d0f0f;color:var(--danger);border:1px solid #f8514940;">Fehler gefunden &amp; behoben</span></td>
+  </tr>
+  <tr>
+    <td><code>journal</code></td>
+    <td><code>/system/journal</code></td>
+    <td><span class="badge" style="background:#2d0f0f;color:var(--danger);border:1px solid #f8514940;">Fehler gefunden &amp; behoben</span></td>
+  </tr>
+  <tr>
+    <td><code>cluster</code></td>
+    <td><code>/system/indexer/cluster/health</code></td>
+    <td><span class="badge badge-green">bestätigt korrekt</span></td>
+  </tr>
+  <tr>
+    <td><code>inputs</code></td>
+    <td><code>/system/inputstates</code></td>
+    <td><span class="badge badge-green">bestätigt korrekt</span></td>
+  </tr>
+  <tr>
+    <td><code>throughput</code></td>
+    <td><code>/system/throughput</code></td>
+    <td><span class="badge badge-green">bestätigt korrekt</span></td>
+  </tr>
+</table>
+
+<h3>Fehler 1: lbstatus kommuniziert über den HTTP-Statuscode, nicht über den Body</h3>
+<p>
+  Die Annahme war, Graylog liefert bei <code>/system/lbstatus</code> immer
+  HTTP 200 und den eigentlichen Status (<code>ALIVE</code>/<code>THROTTLED</code>/<code>DEAD</code>)
+  als Klartext im Response-Body. Laut Spezifikation stimmt das nicht: der
+  Zustand steckt im <strong>HTTP-Statuscode selbst</strong> –
+  <code>200</code>=ALIVE, <code>429</code>=THROTTLED, <code>503</code>=DEAD.
+</p>
+<p>
+  Das war ein echter Bug: die gemeinsame <code>api_get()</code>-Hilfsfunktion
+  des Skripts behandelte jeden Nicht-200-Code als Verbindungsfehler
+  (UNKNOWN) – <code>THROTTLED</code> und <code>DEAD</code> wären also nie
+  als solche erkannt worden, sondern immer nur als "kann Graylog nicht
+  erreichen" gemeldet. <code>check_lbstatus()</code> macht jetzt seinen
+  eigenen Request statt über <code>api_get()</code> zu gehen und wertet den
+  Statuscode direkt aus.
+</p>
+
+<h3>Fehler 2: journal hat kein Feld <code>utilization_ratio</code></h3>
+<p>
+  Die komplette Warn/Krit-Schwellenwert-Logik von <code>check_journal()</code>
+  beruhte auf einem Feld <code>utilization_ratio</code> (0.0–1.0) in der
+  Antwort von <code>/system/journal</code>. Laut
+  <code>JournalSummaryResponse</code>-Schema in der Spezifikation existiert
+  dieses Feld schlicht nicht. Vorhanden sind stattdessen
+  <code>journal_size</code> und <code>journal_size_limit</code> (beide in
+  Bytes) – die Auslastung muss selbst berechnet werden:
+  <code>journal_size / journal_size_limit * 100</code>. Das Skript macht das
+  jetzt so, mit einer Absicherung gegen Division durch Null, falls
+  <code>journal_size_limit</code> einmal 0 ist.
+</p>
+<div class="callout callout-info">
+  <strong>Wichtige Einschränkung dieses Abgleichs</strong>
+  Das war ein <strong>struktureller</strong> Abgleich (welche Felder gibt es,
+  wie heißen sie, welchen Typ haben sie) anhand der Spezifikation – kein
+  <strong>Laufzeit-Test</strong> mit echten Werten aus einer laufenden
+  Instanz. Ob z. B. die Warn/Krit-Schwellenwerte im journal-Modus (80&nbsp;%/95&nbsp;%)
+  bei echten Werten sinnvoll reagieren, oder ob <code>check_lbstatus()</code>
+  tatsächlich einen 429er bekommt, wenn Graylog throttelt, lässt sich erst
+  gegen eine laufende Instanz zeigen (siehe <a href="#next-steps">Nächste
+  Schritte</a>).
+</div>
+</section>
+
+<section id="vorlage-check">
+<h2>ChatGPT-Vorlage: Bewertung (2026-07-23)</h2>
+<p>
+  Raphael hat mir zusätzlich <code>original-chatgpt-proposal.txt</code>
+  zur Verfügung gestellt – eine Liste von zehn vorgeschlagenen Checks von
+  ChatGPT. Abgleich jedes Vorschlags gegen die echte OpenAPI-Spezifikation
+  (<code>openapi.json</code>):
+</p>
+<table>
+  <tr><th>Vorschlag</th><th>Vorgeschlagener Endpoint</th><th>Bewertung</th></tr>
+  <tr>
+    <td>Clusterstatus</td>
+    <td><code>GET /api/cluster</code></td>
+    <td><span class="badge badge-green">korrekt</span> – existiert genau so, jetzt als Modus <code>nodes</code> umgesetzt</td>
+  </tr>
+  <tr>
+    <td>Node-Informationen</td>
+    <td><code>GET /api/system/cluster/nodes</code></td>
+    <td><span class="badge badge-green">Endpoint existiert</span> – <code>/api/cluster</code> (oben) liefert dieselbe Information direkt mit Gesundheitsstatus pro Knoten, daher dafür verwendet statt eines zweiten Aufrufs</td>
+  </tr>
+  <tr>
+    <td>Journal-Auslastung</td>
+    <td><code>GET /api/system/metrics/org.graylog2.journal.*</code></td>
+    <td><span class="badge" style="background:#2d1f00;color:var(--warn);border:1px solid #d2992240;">Pfad falsch</span> – Wildcard-Pfade existieren nicht; bereits als eigener Modus <code>journal</code> über den dedizierten <code>/system/journal</code>-Endpoint gelöst (besser als der Metrik-Umweg)</td>
+  </tr>
+  <tr>
+    <td>Input/Process/Output Buffer</td>
+    <td><code>GET /api/system/metrics/org.graylog2.buffers.*.*</code></td>
+    <td><span class="badge" style="background:#2d1f00;color:var(--warn);border:1px solid #d2992240;">Pfad falsch</span> – gleiches Problem; jetzt über generischen Modus <code>metric</code> abrufbar, sobald die exakten Metrik-Namen per <code>list-metrics --filter buffers</code> ermittelt sind</td>
+  </tr>
+  <tr>
+    <td>Message Throughput</td>
+    <td><code>GET /api/system/throughput</code></td>
+    <td><span class="badge badge-green">korrekt</span> – bereits als Modus <code>throughput</code> umgesetzt (siehe <a href="#openapi-check">OpenAPI-Abgleich</a>)</td>
+  </tr>
+  <tr>
+    <td>Inputs</td>
+    <td><code>GET /api/system/inputs</code></td>
+    <td><span class="badge badge-green">Endpoint existiert</span> – <code>/api/system/inputstates</code> (bereits als Modus <code>inputs</code> umgesetzt) liefert zusätzlich direkt den Laufzustand pro Input, ist für einen Check die passendere Wahl</td>
+  </tr>
+  <tr>
+    <td>JVM Heap / GC / CPU / Pipeline / Thread Pools / Processing Rate</td>
+    <td><code>GET /api/system/metrics/&lt;namespace&gt;.*</code></td>
+    <td><span class="badge" style="background:#2d1f00;color:var(--warn);border:1px solid #d2992240;">Pfad falsch</span> – gleiches Wildcard-Problem für alle sechs; jetzt einheitlich über Modus <code>metric</code> abrufbar</td>
+  </tr>
+</table>
+<p>
+  <strong>Kurzfassung:</strong> Die <em>Metrik-Auswahl</em> von ChatGPT ist
+  fachlich sinnvoll und deckt echte Lücken ab, die die ursprünglichen fünf
+  Modi hatten (v. a. Buffer-Auslastung und Multi-Node-Erreichbarkeit fehlten
+  komplett). Die <em>Endpoint-Syntax</em> für alles unter
+  <code>/system/metrics/...</code> ist aber nicht korrekt – Graylogs REST
+  API kennt keine Wildcard-Pfade wie
+  <code>org.graylog2.journal.*</code>. Der tatsächliche Mechanismus:
+</p>
+<ul>
+  <li><code>GET /system/metrics/{metricName}</code> – ein exakt benannter Einzelwert</li>
+  <li><code>GET /system/metrics/namespace/{namespace}</code> – alle Metriken unter einem Namensraum (ohne <code>.*</code>-Suffix)</li>
+  <li><code>POST /system/metrics/multiple</code> – eine explizite Liste von Metrik-Namen auf einmal</li>
+  <li><code>GET /system/metrics/names</code> – Discovery: alle verfügbaren Namen</li>
+</ul>
+<p>
+  Umgesetzt wurden die zwei spezifikations-sicheren, sofort korrekt
+  nachbaubaren Vorschläge (<code>nodes</code> für Clusterstatus/Node-Info)
+  sowie ein generischer <code>metric</code>-Modus plus
+  <code>list-metrics</code>-Discovery-Helfer für den ganzen Rest (JVM Heap,
+  GC, CPU, Buffer, Pipeline, Thread Pools) – siehe <a href="#modes">Die acht
+  Modi</a>, Punkte 6–8. Bewusst <strong>nicht</strong> für jede einzelne
+  Metrik-Familie ein eigener hartkodierter Modus mit geratenen Feldnamen,
+  nachdem genau das bei <code>utilization_ratio</code> im journal-Modus
+  bereits einmal danebenlag (siehe <a href="#openapi-check">OpenAPI-Abgleich</a>)
+  – die konkreten Metrik-Response-Formen sind in der Spezifikation nicht
+  typisiert, ein generischer Modus ist hier ehrlicher als sieben Modi mit
+  unbestätigten Annahmen.
+</p>
+</section>
+
+<section id="live-verification">
+<h2>Live-Verifikation (2026-07-24)</h2>
+<p>
+  Der in <a href="#openapi-check">OpenAPI-Abgleich</a> beschriebene
+  Struktur-Check wurde jetzt durch einen echten <strong>Laufzeit-Test</strong>
+  ergänzt: eine tatsächlich laufende Graylog-Instanz plus eine tatsächlich
+  laufende Icinga2-Instanz, beide per Docker aufgesetzt, das Plugin komplett
+  durchgetestet und in Icinga2 scharf geschaltet.
+</p>
+
+<h3>Testszenario</h3>
+<p>
+  Aufgebaut auf einer eigenen Test-VM (<code>HP1-icinga01</code>,
+  192.168.10.35, 8&nbsp;GB RAM) im Homelab-Cluster, komplett per Docker
+  Compose, ohne dauerhafte Systeminstallation:
+</p>
+<table>
+  <tr><th>Komponente</th><th>Image</th><th>Rolle</th></tr>
+  <tr><td>MongoDB</td><td><code>mongo:7.0</code></td><td>Graylogs Konfigurationsdatenbank</td></tr>
+  <tr><td>OpenSearch</td><td><code>opensearchproject/opensearch:2.19.0</code></td><td>Indexer/Suche (Single-Node, Security-Plugin deaktiviert)</td></tr>
+  <tr><td>Graylog</td><td><code>graylog/graylog:7.1.3</code></td><td>Die zu testende Anwendung selbst — bewusst exakt dieselbe Version wie die für den <a href="#openapi-check">OpenAPI-Abgleich</a> verwendete Spezifikation (<code>7.1.3+c34604d</code>)</td></tr>
+  <tr><td>Icinga2</td><td><code>icinga/icinga2:latest</code> (v2.16.4)</td><td>Führt das Plugin real über CheckCommand/Service aus, in einem separaten Compose-Stack</td></tr>
+</table>
+<div class="callout callout-danger">
+  <strong>Korrektur: erster Testlauf versehentlich gegen Graylog 6.1 statt 7.x</strong>
+  Der ursprüngliche Live-Test lief zunächst gegen <code>graylog/graylog:6.1</code>
+  – ein Versehen, da die <a href="#openapi-check">OpenAPI-Spezifikation</a>,
+  gegen die vorher die Struktur abgeglichen wurde, für Graylog
+  <strong>7.1.3</strong> war. Raphael hat das beim Doku-Lesen bemerkt und
+  nachgefragt. Der komplette Live-Test (alle acht Modi, Icinga2-Integration)
+  wurde danach gegen <code>graylog/graylog:7.1.3</code> wiederholt – mit
+  identischem Ergebnis: keiner der beiden gefundenen Bugs (lbstatus-Header,
+  Metrics-Berechtigungen) war 6.1-spezifisch, beide Fixes gelten unverändert
+  auch bei 7.1.3. Nebenbefund dabei: Graylog 7.1.3 verlangt mindestens
+  <strong>MongoDB 7.0</strong> (mit 6.0 bricht der Start mit einer
+  expliziten Preflight-Fehlermeldung ab) – reine Infrastruktur-Voraussetzung
+  für den Testaufbau, keine Änderung an der REST-API selbst.
+</div>
+<div class="callout callout-warn">
+  <strong>Stolperstein beim Aufbau: OpenSearch 2.12+ verlangt ein Admin-Passwort, auch wenn Security deaktiviert ist</strong>
+  <code>plugins.security.disabled=true</code> allein reicht seit OpenSearch
+  2.12 nicht mehr – der Container bricht ohne
+  <code>OPENSEARCH_INITIAL_ADMIN_PASSWORD</code> beim Start ab (Crash-Loop).
+  Relevant nur für den Aufbau einer <em>Testumgebung</em> wie dieser, nicht
+  für den Plugin-Code selbst.
+</div>
+<p>
+  Für den Icinga2-Test-Container: Das Image basiert auf Debian 13, enthält
+  aber standardmäßig <strong>kein Python 3</strong> – musste per
+  <code>apt-get install python3 python3-requests</code> nachinstalliert
+  werden, bevor <code>check_graylog.py</code> überhaupt ausführbar war. In
+  einer regulären Debian/Ubuntu-Icinga2-Installation (kein Container) ist das
+  in aller Regel bereits vorhanden.
+</p>
+
+<h3>Ergebnisse: Alle acht Modi gegen die echte API (final gegen Graylog 7.1.3)</h3>
+<table>
+  <tr><th>Modus</th><th>Ergebnis (live, Graylog 7.1.3)</th><th>Status</th></tr>
+  <tr><td><code>lbstatus</code></td><td><code>GRAYLOG OK - load balancer status is ALIVE</code></td><td><span class="badge" style="background:#2d0f0f;color:var(--danger);border:1px solid #f8514940;">Bug gefunden &amp; behoben</span></td></tr>
+  <tr><td><code>cluster</code></td><td><code>GRAYLOG OK - indexer cluster health is green</code> (pendelte im Test mehrfach zu <code>yellow</code> und zurück &ndash; beides korrekt kartiert, normale Fluktuation bei frischem Single-Node-OpenSearch)</td><td><span class="badge badge-green">korrekt</span></td></tr>
+  <tr><td><code>journal</code></td><td><code>GRAYLOG OK - journal utilization is 0.0%</code></td><td><span class="badge badge-green">korrekt</span></td></tr>
+  <tr><td><code>inputs</code></td><td><code>GRAYLOG WARNING - no inputs configured</code> (erwartet, keine Inputs angelegt)</td><td><span class="badge badge-green">korrekt</span></td></tr>
+  <tr><td><code>throughput</code></td><td><code>GRAYLOG OK - throughput is 0 msg/s</code></td><td><span class="badge badge-green">korrekt</span></td></tr>
+  <tr><td><code>nodes</code></td><td><code>GRAYLOG OK - all 1 node(s) healthy</code></td><td><span class="badge badge-green">korrekt</span></td></tr>
+  <tr><td><code>list-metrics</code></td><td>36 Treffer für Filter <code>journal</code></td><td><span class="badge" style="background:#2d1f00;color:var(--warn);border:1px solid #d2992240;">Rechte-Lücke gefunden &amp; behoben</span></td></tr>
+  <tr><td><code>metric</code></td><td><code>GRAYLOG OK - jvm.memory.heap.usage (value) = 0.080...</code></td><td><span class="badge badge-green">korrekt</span></td></tr>
+</table>
+<div class="callout callout-success">
+  <strong>Beide Bugs bei 7.1.3 identisch bestätigt</strong>
+  Der komplette Testlauf wurde nach Entdeckung des Versions-Mismatches
+  (siehe <a href="#live-verification">oben</a>) gegen die korrekte Version
+  wiederholt. Ergebnis: keiner der beiden gefundenen Bugs war
+  6.1-spezifisch &ndash; beide Fixes (Accept-Header bei <code>lbstatus</code>,
+  Metrics-Permissions) sind bei 7.1.3 unverändert nötig und wirksam.
+</div>
+
+<h3>Bug 1: <code>lbstatus</code> lieferte HTTP 406 statt der Statusauskunft</h3>
+<p>
+  Live-Ergebnis vor dem Fix: <code>GRAYLOG UNKNOWN - load balancer status is
+  HTTP 406</code>. Ursache: <code>/system/lbstatus</code> antwortet mit
+  <code>Content-Type: text/plain</code>, das Skript sandte aber für
+  <strong>alle</strong> Endpunkte pauschal <code>Accept: application/json</code>
+  – Graylog verweigert die Antwort dann mit 406 Not Acceptable, statt einfach
+  Klartext zu liefern. Fix: für diesen einen Endpunkt <code>Accept: */*</code>
+  statt <code>application/json</code>.
+</p>
+<div class="callout callout-info">
+  <strong>Warum das im OpenAPI-Abgleich nicht auffiel</strong>
+  Der frühere Struktur-Test (siehe <a href="#openapi-check">OpenAPI-Abgleich</a>)
+  hat nur die Spezifikation gelesen, nie eine echte HTTP-Anfrage gestellt –
+  ein Accept-Header-Konflikt zeigt sich naturgemäß erst im echten
+  Request/Response-Zyklus. Genau das ist der Unterschied zwischen
+  Struktur-Verifikation und Laufzeit-Verifikation.
+</div>
+
+<h3>Bug 2 (eigentlich: Rechte-Lücke): <code>metric</code>/<code>list-metrics</code> mit reinem Reader-Token</h3>
+<p>
+  Live-Ergebnis vor dem Fix: <code>GRAYLOG UNKNOWN -
+  .../system/metrics/names returned HTTP 403: Not authorized</code>. Kein
+  Bug im Skript, sondern eine Berechtigungslücke der <strong>Reader</strong>-Rolle
+  in Graylog – Details und Fix siehe <a href="#auth">Authentifizierung</a>
+  weiter oben.
+</p>
+
+<h3>Vollständige Icinga2-Integration bestätigt</h3>
+<p>
+  Nicht nur das Skript manuell aufgerufen, sondern tatsächlich als
+  <code>CheckCommand</code> + <code>Service</code>-Objekte in Icinga2
+  eingerichtet und über Icinga2s eigenen Scheduler laufen lassen. Abfrage der
+  echten, von Icinga2 selbst produzierten Check-Ergebnisse über dessen
+  REST-API (<code>GET /v1/objects/services</code>):
+</p>
+<pre><code>graylog-lbstatus       state=0 (OK)      GRAYLOG OK - load balancer status is ALIVE
+graylog-cluster-health state=0 (OK)      GRAYLOG OK - indexer cluster health is green
+graylog-journal        state=0 (OK)      GRAYLOG OK - journal utilization is 0.0%
+graylog-inputs         state=1 (WARNING) GRAYLOG WARNING - no inputs configured
+graylog-throughput     state=0 (OK)      GRAYLOG OK - throughput is 0 msg/s
+graylog-nodes          state=0 (OK)      GRAYLOG OK - all 1 node(s) healthy
+graylog-jvm-heap       state=0 (OK)      GRAYLOG OK - jvm.memory.heap.usage (value) = 0.084...</code></pre>
+<p style="margin-top:-8px;color:var(--muted);font-size:13px;">
+  (Abfrage nach dem Wiederholungslauf gegen Graylog 7.1.3 — <code>cluster-health</code>
+  zeigte im Verlauf des Tests sowohl <code>green</code> als auch <code>yellow</code>,
+  je nach OpenSearch-Shard-Zustand im Moment der Abfrage, beides korrekt kartiert.)
+</p>
+<p>
+  Deckt sich exakt mit den manuellen Tests oben – bestätigt, dass
+  <code>CheckCommand</code>-Argument-Mapping, <code>Service</code>-Vars und
+  das tatsächliche Ausführen durch Icingas Checker-Komponente sauber
+  zusammenspielen, nicht nur die manuelle Kommandozeile.
+</p>
+</section>
+
+<section id="handover-setup">
+<h2>Einrichtung für den Produktiveinsatz</h2>
+<p>
+  Diese Anleitung geht von einer <strong>echten</strong> Graylog- und
+  Icinga2-Installation aus (Paket-/Systeminstallation, kein Docker-Testaufbau
+  wie oben) – für eine bereits laufende Umgebung wie eure.
+</p>
+<ol class="steps">
+  <li><strong>Reader-Benutzer in Graylog anlegen</strong> (Web-UI: System &rarr; Users &rarr; Create User, Rolle "Reader"), oder per API:
+    <pre style="margin-top:8px"><code>curl -u admin:&lt;adminpw&gt; -H "X-Requested-By: cli" -H "Content-Type: application/json" \
+  -X POST "http://&lt;graylog&gt;:9000/api/users" \
+  -d '{"username":"icinga-monitoring","password":"&lt;starkes-passwort&gt;",
+       "first_name":"Icinga","last_name":"Monitoring","email":"icinga@example.org",
+       "roles":["Reader"],"permissions":[]}'</code></pre>
+  </li>
+  <li><strong>Nur falls <code>metric</code>/<code>list-metrics</code> genutzt werden sollen:</strong> die vier Metrics-Permissions nachrüsten (siehe <a href="#auth">Authentifizierung</a> für den genauen Befehl und die User-ID-Ermittlung).</li>
+  <li><strong>API-Token für diesen Benutzer erzeugen:</strong>
+    <pre style="margin-top:8px"><code>curl -u admin:&lt;adminpw&gt; -H "X-Requested-By: cli" -H "Content-Type: application/json" \
+  -X POST "http://&lt;graylog&gt;:9000/api/users/&lt;user-id&gt;/tokens/icinga-check"</code></pre>
+    Antwort enthält das eigentliche Token im Feld <code>token</code> – das
+    ist der Wert für <code>graylog_token</code> in Icinga2, <strong>nicht</strong>
+    das Benutzerpasswort.
+  </li>
+  <li><strong><code>check_graylog.py</code> auf den Icinga2-Host kopieren</strong>, z. B. nach <code>/usr/lib/nagios/plugins/check_graylog.py</code>. Python 3 + das Paket <code>requests</code> müssen dort vorhanden sein (<code>apt install python3-requests</code>).</li>
+  <li><strong><code>commands.conf.example</code> und <code>services-graylog.conf.example</code></strong> aus diesem Ordner nach <code>/etc/icinga2/conf.d/</code> kopieren, Endung <code>.example</code> entfernen.</li>
+  <li>In der kopierten Services-Datei bzw. im <code>Host</code>-Objekt eurer Graylog-Instanz <code>vars.graylog_url</code> (die API-Root-URL, z. B. <code>https://graylog.example.org:9000/api</code>) und <code>vars.graylog_token</code> (das Token aus Schritt 3) setzen.</li>
+  <li><strong>Konfiguration validieren, bevor neu geladen wird:</strong>
+    <pre style="margin-top:8px"><code>icinga2 daemon -C</code></pre>
+  </li>
+  <li>Icinga2 neu laden/starten. Nach einem Check-Intervall die Services im Icinga-Web-Frontend prüfen, oder direkt per CLI:
+    <pre style="margin-top:8px"><code>icinga2 object list --type Service --name '&lt;hostname&gt;!graylog-*'</code></pre>
+  </li>
+</ol>
+<div class="callout callout-warn">
+  <strong>Vor dem produktiven Rollout unbedingt beachten</strong>
+  <ul style="margin-top:6px">
+    <li>TLS: Läuft eure Graylog-Instanz auf HTTPS mit selbstsigniertem Zertifikat, <code>vars.graylog_insecure = true</code> setzen (oder besser: ein echtes Zertifikat hinterlegen).</li>
+    <li>Der <code>journal</code>-Modus hat Default-Schwellenwerte von 80&nbsp;%/95&nbsp;% – bei produktivem Nachrichtenaufkommen ggf. anpassen, die hier getesteten Werte (0&nbsp;%) sagen über euer reales Aufkommen nichts aus.</li>
+    <li><code>nodes</code>-Modus: <code>--expected-nodes</code> auf die tatsächliche Node-Anzahl eures Clusters setzen, sonst wird ein fehlender Node nicht zuverlässig erkannt.</li>
+  </ul>
+</div>
+</section>
+
+<section id="open">
+<h2>Offene Punkte</h2>
+<ul>
+  <li>Getestet wurde gegen eine frische, leere Graylog-Instanz ohne reale Nachrichtenlast – Schwellenwerte (<code>journal</code>, <code>throughput</code>) sind gegen echten Produktivbetrieb noch nicht validiert</li>
+  <li><code>metric</code>/<code>list-metrics</code> wurden nur mit einem Beispiel (<code>jvm.memory.heap.usage</code>) getestet – weitere gewünschte Metriken (Buffer-Auslastung etc.) vor Nutzung einmal mit <code>list-metrics</code> suchen und einzeln verifizieren</li>
+  <li>Multi-Node-Test von <code>nodes</code>/<code>--expected-nodes</code> steht noch aus (Testumgebung hatte nur einen Graylog-Node)</li>
+</ul>
+</section>
+
+</main>
+</body>
+</html>

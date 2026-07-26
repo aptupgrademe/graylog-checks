@@ -1,0 +1,43 @@
+Graylog Monitoring – Vorschlag API-Checks
+
+  ---------------------------------------------------------------------------------------------------------------------
+  Monitoring           Beispiel API-Endpunkt                                             Bemerkung
+  -------------------- ----------------------------------------------------------------- ------------------------------
+  Clusterstatus        GET /api/cluster                                                  Sind alle Graylog-Knoten
+                                                                                         erreichbar?
+
+  Node-Informationen   GET /api/system/cluster/nodes                                     Laufende Graylog-Server und
+                                                                                         deren Status
+
+  Journal-Auslastung   GET /api/system/metrics/org.graylog2.journal.*                    Journal Size, Uncommitted
+                                                                                         Entries
+
+  Input Buffer         GET /api/system/metrics/org.graylog2.buffers.input.*              Buffergröße und Auslastung
+
+  Process Buffer       GET /api/system/metrics/org.graylog2.buffers.process.*            Wichtiger Indikator für die
+                                                                                         Verarbeitungsleistung
+
+  Output Buffer        GET /api/system/metrics/org.graylog2.buffers.output.*             Rückstau in Richtung
+                                                                                         OpenSearch
+
+  Message Throughput   GET /api/system/throughput                                        Eingehende und verarbeitete
+                                                                                         Nachrichten
+
+  Inputs               GET /api/system/inputs                                            Status der konfigurierten
+                                                                                         Inputs
+
+  JVM Heap             GET /api/system/metrics/java.lang.Memory.*                        Heap- und Non-Heap-Speicher
+
+  Garbage Collection   GET /api/system/metrics/java.lang.GarbageCollector.*              Laufzeiten und Anzahl der
+                                                                                         GC-Zyklen
+
+  CPU-Auslastung       GET /api/system/metrics/java.lang.OperatingSystem.*               CPU-Last des Graylog-Knotens
+
+  Pipeline Performance GET /api/system/metrics/org.graylog.plugins.pipelineprocessor.*   Pipeline-Laufzeiten und Fehler
+
+  Thread Pools         GET /api/system/metrics/java.util.concurrent.*                    Warteschlangen und
+                                                                                         Thread-Auslastung
+
+  Processing Rate      GET /api/system/metrics/*throughput*                              Verarbeitungsgeschwindigkeit /
+                                                                                         Backlog
+  ---------------------------------------------------------------------------------------------------------------------
